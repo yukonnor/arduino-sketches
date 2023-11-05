@@ -24,9 +24,9 @@ const int XL_PIXEL_START = L_PIXEL_START + L_PIXEL_COUNT; // 75
 const int XL_PIXEL_END = XL_PIXEL_START + XL_PIXEL_COUNT; // 120 (index 119)
 
 
-short pixel_colors[LED_COUNT][3];                // array to store colors in their original, primary position 
-short shifted_pixel_colors[LED_COUNT][3];        // array to start colors after being shifted
-short gradient_colors[2][3] = {{0,0,0},{0,0,0}}; // array of 2 rbg colors for the gradient
+byte pixel_colors[LED_COUNT][3];                // array to store colors in their original, primary position 
+byte shifted_pixel_colors[LED_COUNT][3];        // array to start colors after being shifted
+byte gradient_colors[2][3] = {{0,0,0},{0,0,0}}; // array of 2 rbg colors for the gradient
 
 bool adjust_colors = true;                       // set whether you want to adjust colors or not (so you don't pointless adjust to same color every loop)
 
@@ -52,14 +52,14 @@ void light_leds(){
 }
 
 
-void set_gradient_color(short color_num, short r, short g, short b) {
+void set_gradient_color(byte color_num, byte r, byte g, byte b) {
   // set the two colors for the gradient in the gradient color array
   gradient_colors[color_num][0] = r;
   gradient_colors[color_num][1] = g;
   gradient_colors[color_num][2] = b;
 }
 
-short get_ring_pixel_count(char circle)
+byte get_ring_pixel_count(char circle)
 {
   // define pixel count and offset for each circle type
   if (circle == 's')
@@ -80,7 +80,7 @@ short get_ring_pixel_count(char circle)
   }
 }
 
-short get_ring_first_pixel(char circle)
+byte get_ring_first_pixel(char circle)
 {
   if (circle == 's')
   {
@@ -100,12 +100,12 @@ short get_ring_first_pixel(char circle)
   }
 }
 
-void apply_gradient(char circle, short color_1[], short color_2[])
+void apply_gradient(char circle, byte color_1[], byte color_2[])
 { // Applies the color gradient between two colors on a given pixel ring to the main pixel_colors array.
   // TODO: define array size?
 
-  short pixels_per_color = get_ring_pixel_count(circle) / 2; // find how many pixels each color should have based on the ring
-  short ring_first_pixel = get_ring_first_pixel(circle);     // was circle_offset    // determines where the first color should start based on which circle we're working on
+  byte pixels_per_color = get_ring_pixel_count(circle) / 2; // find how many pixels each color should have based on the ring
+  byte ring_first_pixel = get_ring_first_pixel(circle);     // was circle_offset    // determines where the first color should start based on which circle we're working on
 
   // add one to pixels_per_color for the rings with odd # leds
   if (pixels_per_color % 2 == 1)
@@ -115,7 +115,7 @@ void apply_gradient(char circle, short color_1[], short color_2[])
   for (int color = 0; color < 2; color++)
   {
     // figure out which range of pixels we're working on based on the circle: [start pixel, end pixel]
-    short current_range[2];
+    byte current_range[2];
 
     // to fix bug of xl 2nd color going out of array range
     if (circle == 'x' && color == 1)
@@ -129,7 +129,7 @@ void apply_gradient(char circle, short color_1[], short color_2[])
       current_range[1] = ((color + 1) * pixels_per_color) + ring_first_pixel; // 22 + 75 = 97
     }
 
-    short final_color[3];
+    byte final_color[3];
 
     // set the starting color for the range (if color = 0 it's red. if color = 1 it's blue)
     if (color == 0)
