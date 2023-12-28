@@ -13,6 +13,14 @@
 
 // Define shield variables
 byte current_color = 0; 
+int pot_value[4] = {0,0,0,0};
+int last_pot_value[4][2] = {{0,0}, {0,0}, {0,0}, {0,0}} ;  // 1-3 currently using JUST for r,g,b colors
+int pot_value_diff[3] = {0,0,0};
+bool actively_measure_pot[4] = {true,true,true,true};
+
+// Define delay variables
+unsigned long previousMillis = 0;
+int delayInterval = 50;
 
 // Which pin on the Arduino is connected to the NeoPixels?
 #define LED_PIN 6
@@ -222,19 +230,35 @@ int shift_pixels(char circle, byte shift_amt, int shift_counter)
   return shift_counter;
 }
 
-void update_colors()
-{
-  int pot1Value = analogRead(pot1Pin); // Read the potentiometer value
-  int pot2Value = analogRead(pot2Pin); // Read the potentiometer value
-  int pot3Value = analogRead(pot3Pin); // Read the potentiometer value
-  int r = map(pot1Value, 0, 1023, 0, 255); // Map potentiometer value to hue range (0-255)
-  int g = map(pot2Value, 0, 1023, 0, 255); // Map potentiometer value to hue range (0-255)
-  int b = map(pot2Value, 0, 1023, 0, 255); // Map potentiometer value to hue range (0-255)
+void update_color(byte color_num) {
 
-  // TODO: add logic for adjust_colors to only adjust colors if significant change
-  if (adjust_colors) 
+  pot_value_diff[color_num] = abs(last_pot_value[color_num][current_color] - pot_value[color_num]);
+
+  if (pot_value_diff[color_num] < 5 || actively_measure_pot[color_num] == true)
   {
-    set_gradient_color(current_color, r, g, b);
+    actively_measure_pot[color_num] = true;              // keep measuring pot once the current value comes close to old value
+    int color = map(pot_value[color_num], 0, 1023, 0, 255); 
+
+    // now that we're measuring, if the pot is twisted, adjust color
+    if (pot_value_diff[color_num] > 10)
+    {
+      adjust_colors = true;
+    } else 
+    {
+      adjust_colors = false;
+    }
+
+    if (adjust_colors) 
+    {
+      gradient_colors[current_color][color_num] = color;
+
+      apply_gradient('s', gradient_colors[0], gradient_colors[1]);
+      apply_gradient('m', gradient_colors[0], gradient_colors[1]);
+      apply_gradient('l', gradient_colors[0], gradient_colors[1]);
+      apply_gradient('x', gradient_colors[0], gradient_colors[1]);
+    }
+
+    last_pot_value[color_num][current_color] = pot_value[color_num];
   }
 }
 
@@ -244,12 +268,32 @@ void switch_current_color()
 
   //if button 1 pressed, switch current color
   if (buttonRead1 == LOW) {
+
+     Serial.println("Button 1 pressed."); 
+
+     // stop measuring pot values
+     actively_measure_pot[0] = false;
+     actively_measure_pot[1] = false;
+     actively_measure_pot[2] = false;
+
+     // switch color
      if (current_color == 0) 
      {
        current_color = 1;
      }
      else current_color = 0;
   }
+}
+
+void readPots() {
+  pot_value[0] = analogRead(pot1Pin); // Read the potentiometer value
+  pot_value[1] = analogRead(pot2Pin); // Read the potentiometer value
+  pot_value[2] = analogRead(pot3Pin); // Read the potentiometer value
+  pot_value[3] = analogRead(pot4Pin); // Read the potentiometer value
+}
+
+void adjust_delay_interval() {
+  delayInterval = map(pot_value[3], 0, 1023, 20, 500); 
 }
 
 void setup()
@@ -297,17 +341,31 @@ void setup()
 
 void loop()
 {
-  // shift the small circle's led colors
-  s_shift_counter = shift_pixels('s', 1, s_shift_counter);
-  m_shift_counter = shift_pixels('m', 1, m_shift_counter);
-  l_shift_counter = shift_pixels('l', 1, l_shift_counter);
-  xl_shift_counter = shift_pixels('x', 1, xl_shift_counter);
+  unsigned long currentMillis = millis();
 
-  // get new color values
-  update_colors();
+  readPots();
 
-  // update the led colors and show them
-  light_leds();
-  delay(50);
-  Serial.print(".....end of LOOP.....\n");
+  // if we've waited long enough, run the code to update and set the LED colors
+  if (currentMillis - previousMillis >= delayInterval) 
+  {
+    previousMillis = currentMillis;
+
+    // shift the small circle's led colors
+    s_shift_counter = shift_pixels('s', 1, s_shift_counter);
+    m_shift_counter = shift_pixels('m', 1, m_shift_counter);
+    l_shift_counter = shift_pixels('l', 1, l_shift_counter);
+    xl_shift_counter = shift_pixels('x', 1, xl_shift_counter);
+
+    // get new color values
+    update_color(0);
+    update_color(1);
+    update_color(2); 
+    switch_current_color();
+
+    // update the led colors and show them
+    light_leds();
+  }
+  
+  adjust_delay_interval();
+  // Serial.print(".....end of LOOP.....\n");
 }
