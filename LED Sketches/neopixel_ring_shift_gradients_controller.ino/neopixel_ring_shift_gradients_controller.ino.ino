@@ -1,4 +1,18 @@
+// This sketch is usig the "Custom VideoShield" for pots and buttons.
 #include <Adafruit_NeoPixel.h>
+
+// Define shield pins
+#define pot1Pin A0
+#define pot2Pin A2 //note here that the stripboard wires cross, hence out of order
+#define pot3Pin A1
+#define pot4Pin A3
+#define button1Pin 13
+#define button2Pin 12
+#define button3Pin 11
+#define button4Pin 10
+
+// Define shield variables
+byte current_color = 0; 
 
 // Which pin on the Arduino is connected to the NeoPixels?
 #define LED_PIN 6
@@ -26,11 +40,7 @@ bool adjust_colors = true; // set whether you want to adjust colors or not (to a
 
 bool free_shift = true;  // mode for shifting colors around each ring individually
 bool sync_shift = false; // mode for shifting colors around all rings in sync
-// const float micro_step_amt = 0.02;
-// float xl_shift_counter = 0.00;
-// float l_shift_counter = 0.00;
-// float m_shift_counter = 0.00;
-// float s_shift_counter = 0.00;
+
 int xl_shift_counter = 0;
 int l_shift_counter = 0;
 int m_shift_counter = 0;
@@ -212,10 +222,48 @@ int shift_pixels(char circle, byte shift_amt, int shift_counter)
   return shift_counter;
 }
 
+void update_colors()
+{
+  int pot1Value = analogRead(pot1Pin); // Read the potentiometer value
+  int pot2Value = analogRead(pot2Pin); // Read the potentiometer value
+  int pot3Value = analogRead(pot3Pin); // Read the potentiometer value
+  int r = map(pot1Value, 0, 1023, 0, 255); // Map potentiometer value to hue range (0-255)
+  int g = map(pot2Value, 0, 1023, 0, 255); // Map potentiometer value to hue range (0-255)
+  int b = map(pot2Value, 0, 1023, 0, 255); // Map potentiometer value to hue range (0-255)
+
+  // TODO: add logic for adjust_colors to only adjust colors if significant change
+  if (adjust_colors) 
+  {
+    set_gradient_color(current_color, r, g, b);
+  }
+}
+
+void switch_current_color()
+{
+  int buttonRead1 = digitalRead(button1Pin);
+
+  //if button 1 pressed, switch current color
+  if (buttonRead1 == LOW) {
+     if (current_color == 0) 
+     {
+       current_color = 1;
+     }
+     else current_color = 0;
+  }
+}
+
 void setup()
 {
   Serial.begin(9600); // open the serial port at 9600 bps:
-  strip.begin();      // INITIALIZE NeoPixel strip object (REQUIRED)
+
+  //Set button pins to use internal Pullup resistors
+  pinMode(button1Pin, INPUT_PULLUP);
+  pinMode(button2Pin, INPUT_PULLUP);
+  pinMode(button3Pin, INPUT_PULLUP);
+  pinMode(button4Pin, INPUT_PULLUP);
+
+  // INITIALIZE NeoPixel strip object (REQUIRED)
+  strip.begin();      
   strip.clear();
   strip.show();                            // Turn OFF all pixels (turns off as no pixel colors have been defined yet)
   strip.setBrightness(5);                  // Set BRIGHTNESS (max = 255)
@@ -254,6 +302,9 @@ void loop()
   m_shift_counter = shift_pixels('m', 1, m_shift_counter);
   l_shift_counter = shift_pixels('l', 1, l_shift_counter);
   xl_shift_counter = shift_pixels('x', 1, xl_shift_counter);
+
+  // get new color values
+  update_colors();
 
   // update the led colors and show them
   light_leds();

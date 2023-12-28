@@ -1,15 +1,15 @@
 
 //Define Analog Potentiometer Pins
-const int pot1Pin = 0;
-const int pot2Pin = 2; //note here that the stripboard wires cross, hence out of order
-const int pot3Pin = 1;
-const int pot4Pin = 3;
+#define pot1Pin A0
+#define pot2Pin A2 //note here that the stripboard wires cross, hence out of order
+#define pot3Pin A1
+#define pot4Pin A3
 
 //Define Digial Button Pins
-const int button1Pin = 13;
-const int button2Pin = 12;
-const int button3Pin = 11;
-const int button4Pin = 10;
+#define button1Pin 13
+#define button2Pin 12
+#define button3Pin 11
+#define button4Pin 10
 
 //Initialize button value variables:
 int button1 = 0;
